@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/error.middleware';
+import { routes } from './routes';
 
 dotenv.config();
 
@@ -34,6 +35,8 @@ app.get('/status', (req, res) => {
     environment: process.env.NODE_ENV,
   });
 });
+
+app.use('/api', routes);
 
 app.use(errorHandler);
 
