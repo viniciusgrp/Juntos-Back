@@ -1,6 +1,5 @@
 import * as yup from 'yup';
 
-// Schema para criação de conta
 export const createAccountSchema = yup.object({
   name: yup
     .string()
@@ -19,9 +18,11 @@ export const createAccountSchema = yup.object({
     .default(0)
     .min(-999999999.99, 'Saldo muito baixo')
     .max(999999999.99, 'Saldo muito alto')
+    .transform((value, originalValue) => {
+      return originalValue === undefined || originalValue === null ? 0 : value;
+    })
 });
 
-// Schema para atualização de conta
 export const updateAccountSchema = yup.object({
   name: yup
     .string()
@@ -42,7 +43,6 @@ export const updateAccountSchema = yup.object({
     .optional()
 });
 
-// Schema para transferência entre contas
 export const transferSchema = yup.object({
   fromAccountId: yup
     .string()
@@ -65,5 +65,21 @@ export const transferSchema = yup.object({
     .string()
     .max(255, 'Descrição deve ter no máximo 255 caracteres')
     .trim()
+    .optional()
+});
+
+export const accountFiltersSchema = yup.object({
+  type: yup
+    .string()
+    .oneOf(['checking', 'savings', 'investment', 'cash'], 'Tipo deve ser: checking, savings, investment ou cash')
+    .optional(),
+  
+  minBalance: yup
+    .number()
+    .optional(),
+  
+  maxBalance: yup
+    .number()
+    .min(yup.ref('minBalance'), 'Saldo máximo deve ser maior que o mínimo')
     .optional()
 });
