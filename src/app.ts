@@ -10,11 +10,12 @@ dotenv.config();
 
 const app = express();
 
-// Limita o número de requisições para 1000 a cada 15 minutos
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: process.env.NODE_ENV === 'production' ? 1000 : 10000,
   message: 'Muitas tentativas, tente novamente em 15 minutos',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use(helmet());

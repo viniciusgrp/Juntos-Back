@@ -14,6 +14,7 @@ Esta API fornece todos os endpoints necessários para o funcionamento da aplica�
 - **Gestão de Usuários**: CRUD completo de usuários
 - **Contas Bancárias**: Criação, edição e consulta de contas
 - **Transações**: Receitas, despesas e transferências
+
 - **Categorias**: Sistema flexível de categorização
 - **Cartões de Crédito**: Gestão específica para cartões
 - **Estatísticas**: Endpoints para dashboards e relatórios

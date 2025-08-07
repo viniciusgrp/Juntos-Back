@@ -1,6 +1,5 @@
 import * as yup from 'yup';
 
-// Schema para criação de categoria
 export const createCategorySchema = yup.object({
   name: yup
     .string()
@@ -27,7 +26,6 @@ export const createCategorySchema = yup.object({
     .nullable()
 });
 
-// Schema para atualização de categoria
 export const updateCategorySchema = yup.object({
   name: yup
     .string()

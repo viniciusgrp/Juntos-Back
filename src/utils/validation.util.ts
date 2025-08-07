@@ -1,6 +1,5 @@
 import * as yup from 'yup';
 
-// Schema para registro de usuário
 export const registerSchema = yup.object({
   name: yup
     .string()
@@ -26,7 +25,6 @@ export const registerSchema = yup.object({
     .matches(/(?=.*\d)/, 'Senha deve conter pelo menos um número')
 });
 
-// Schema para login de usuário
 export const loginSchema = yup.object({
   email: yup
     .string()
@@ -42,7 +40,6 @@ export const loginSchema = yup.object({
     .min(1, 'Senha não pode estar vazia')
 });
 
-// Schema para refresh token
 export const refreshTokenSchema = yup.object({
   refreshToken: yup
     .string()
@@ -50,7 +47,6 @@ export const refreshTokenSchema = yup.object({
     .min(1, 'Refresh token não pode estar vazio')
 });
 
-// Schema para atualização de perfil (futuro)
 export const updateProfileSchema = yup.object({
   name: yup
     .string()
@@ -68,7 +64,7 @@ export const updateProfileSchema = yup.object({
     .optional()
 });
 
-// Schema para mudança de senha (futuro)
+// Schema para mudança de senha (futuro)  TODO
 export const changePasswordSchema = yup.object({
   currentPassword: yup
     .string()
@@ -88,7 +84,6 @@ export const changePasswordSchema = yup.object({
     .oneOf([yup.ref('newPassword')], 'Confirmação deve ser igual à nova senha')
 });
 
-// Helper para validar dados
 export const validateData = async <T>(schema: yup.Schema<T>, data: any): Promise<T> => {
   try {
     return await schema.validate(data, { 
@@ -104,7 +99,6 @@ export const validateData = async <T>(schema: yup.Schema<T>, data: any): Promise
   }
 };
 
-// Helper para validar dados de forma síncrona (quando possível)
 export const validateDataSync = <T>(schema: yup.Schema<T>, data: any): T => {
   try {
     return schema.validateSync(data, { 

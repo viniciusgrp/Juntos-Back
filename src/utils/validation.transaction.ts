@@ -1,6 +1,5 @@
 import * as yup from 'yup';
 
-// Schema para criação de transação
 export const createTransactionSchema = yup.object({
   description: yup
     .string()
@@ -47,7 +46,6 @@ export const createTransactionSchema = yup.object({
     .required('Categoria é obrigatória')
 });
 
-// Schema para atualização de transação
 export const updateTransactionSchema = yup.object({
   description: yup
     .string()
@@ -91,7 +89,6 @@ export const updateTransactionSchema = yup.object({
     .optional()
 });
 
-// Schema para filtros de transação
 export const transactionFiltersSchema = yup.object({
   startDate: yup
     .date()

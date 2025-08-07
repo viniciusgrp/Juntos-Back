@@ -27,13 +27,6 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
-  if (err.code === 'P2002') {
-    res.status(409).json({
-      error: 'Recurso já existe'
-    });
-    return;
-  }
-
   const status = err.status || err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production' 
     ? 'Erro interno do servidor' 
