@@ -22,24 +22,30 @@ export class CreditCardService {
   }
 
   async createCreditCard(userId: string, data: CreateCreditCardRequest): Promise<CreditCard> {
-    if (data.closeDate < 1 || data.closeDate > 31) {
+    // Garantir que os valores sejam números
+    const limit = Number(data.limit);
+    const closeDate = Number(data.closeDate);
+    const dueDate = Number(data.dueDate);
+
+    // Validações
+    if (closeDate < 1 || closeDate > 31) {
       throw new Error('Dia de fechamento deve estar entre 1 e 31');
     }
 
-    if (data.dueDate < 1 || data.dueDate > 31) {
+    if (dueDate < 1 || dueDate > 31) {
       throw new Error('Dia de vencimento deve estar entre 1 e 31');
     }
 
-    if (data.limit <= 0) {
+    if (limit <= 0) {
       throw new Error('Limite deve ser maior que zero');
     }
 
     const creditCard = await this.prisma.creditCard.create({
       data: {
         name: data.name,
-        limit: data.limit,
-        closeDate: data.closeDate,
-        dueDate: data.dueDate,
+        limit: limit,
+        closeDate: closeDate,
+        dueDate: dueDate,
         userId
       }
     });
@@ -75,23 +81,37 @@ export class CreditCardService {
   }
 
   async updateCreditCard(userId: string, id: string, data: UpdateCreditCardRequest): Promise<CreditCard> {
+    // Verificar se o cartão existe e pertence ao usuário
     await this.getCreditCardById(userId, id);
 
-    if (data.closeDate !== undefined && (data.closeDate < 1 || data.closeDate > 31)) {
+    // Converter valores para números quando fornecidos
+    const updateData: any = { ...data };
+    if (data.limit !== undefined) {
+      updateData.limit = Number(data.limit);
+    }
+    if (data.closeDate !== undefined) {
+      updateData.closeDate = Number(data.closeDate);
+    }
+    if (data.dueDate !== undefined) {
+      updateData.dueDate = Number(data.dueDate);
+    }
+
+    // Validações para os campos que estão sendo atualizados
+    if (updateData.closeDate !== undefined && (updateData.closeDate < 1 || updateData.closeDate > 31)) {
       throw new Error('Dia de fechamento deve estar entre 1 e 31');
     }
 
-    if (data.dueDate !== undefined && (data.dueDate < 1 || data.dueDate > 31)) {
+    if (updateData.dueDate !== undefined && (updateData.dueDate < 1 || updateData.dueDate > 31)) {
       throw new Error('Dia de vencimento deve estar entre 1 e 31');
     }
 
-    if (data.limit !== undefined && data.limit <= 0) {
+    if (updateData.limit !== undefined && updateData.limit <= 0) {
       throw new Error('Limite deve ser maior que zero');
     }
 
     const creditCard = await this.prisma.creditCard.update({
       where: { id },
-      data
+      data: updateData
     });
 
     return creditCard;
