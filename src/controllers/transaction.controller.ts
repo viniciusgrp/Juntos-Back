@@ -116,4 +116,15 @@ export class TransactionController {
       errorResponse(res, error.message, 400);
     }
   }
+
+  async getDashboardStats(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const stats = await this.transactionService.getDashboardStats(userId);
+
+      successResponse(res, stats, 'Estatísticas do dashboard obtidas com sucesso');
+    } catch (error: any) {
+      errorResponse(res, error.message, 400);
+    }
+  }
 }

@@ -7,24 +7,33 @@ interface EmailOptions {
 }
 
 export class EmailUtil {
-  private static transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      type: 'OAuth2',
-      user: process.env.EMAIL_USER,
-      clientId: process.env.OAUTH_CLIENT_ID,
-      clientSecret: process.env.OAUTH_CLIENT_SECRET,
-      refreshToken: process.env.OAUTH_REFRESH_TOKEN,
-      accessToken: undefined,
-    },
-    debug: true,
-    logger: true
-  });
+  private static getTransporter() {
+    console.log('Configurando transporter...');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER);
+    console.log('EMAIL_PASS length:', process.env.EMAIL_PASS?.length);
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('Variáveis de ambiente EMAIL_USER e EMAIL_PASS são obrigatórias');
+    }
+
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'viniciusgrp@gmail.com',
+        pass: 'xrnt ulsu xjfv lbxz',
+      },
+      debug: true, // Ativar debug
+      logger: true, // Ativar logs
+    });
+  }
 
   static async sendEmail(options: EmailOptions): Promise<void> {
     try {
+      const transporter = this.getTransporter();
+      
       // Verificar se o transporter está configurado corretamente
-      await this.transporter.verify();
+      console.log('Verificando transporter...');
+      await transporter.verify();
       console.log('Transporter verificado com sucesso');
 
       const mailOptions = {
@@ -35,7 +44,7 @@ export class EmailUtil {
       };
 
       console.log('Tentando enviar e-mail para:', options.to);
-      const info = await this.transporter.sendMail(mailOptions);
+      const info = await transporter.sendMail(mailOptions);
       console.log('E-mail enviado com sucesso:', info.messageId);
     } catch (error: any) {
       console.error('Erro detalhado ao enviar e-mail:', {
@@ -43,15 +52,17 @@ export class EmailUtil {
         code: error.code,
         command: error.command,
         response: error.response,
-        responseCode: error.responseCode
+        responseCode: error.responseCode,
       });
-      
-      // Se for erro de autenticação, tentar regenerar o access token
+
+      // Se for erro de autenticação com senha de aplicativo
       if (error.code === 'EAUTH' || error.responseCode === 535) {
-        console.log('Tentando regenerar access token...');
-        throw new Error('Erro de autenticação OAuth2. Verifique as credenciais.');
+        console.log('Erro de autenticação detectado...');
+        throw new Error(
+          'Erro de autenticação. Verifique se a senha de aplicativo está correta.'
+        );
       }
-      
+
       throw new Error(`Falha ao enviar e-mail: ${error.message}`);
     }
   }

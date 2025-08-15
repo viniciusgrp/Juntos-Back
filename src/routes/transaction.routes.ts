@@ -8,6 +8,7 @@ const transactionController = new TransactionController();
 router.use(authMiddleware);
 
 router.get('/stats', transactionController.getTransactionStats.bind(transactionController));
+router.get('/dashboard', transactionController.getDashboardStats.bind(transactionController));
 
 router.get('/', transactionController.getTransactions.bind(transactionController));
 router.post('/', transactionController.createTransaction.bind(transactionController));

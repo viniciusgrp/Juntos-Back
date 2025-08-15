@@ -176,20 +176,20 @@ export class CategoryService {
 
   async createDefaultCategories(userId: string): Promise<Category[]> {
     const defaultCategories = [
-      { name: 'Salário', type: 'INCOME', color: '#4CAF50', icon: 'work' },
-      { name: 'Freelance', type: 'INCOME', color: '#2196F3', icon: 'laptop' },
-      { name: 'Investimentos', type: 'INCOME', color: '#FF9800', icon: 'trending_up' },
-      { name: 'Vendas', type: 'INCOME', color: '#9C27B0', icon: 'sell' },
-      { name: 'Outros', type: 'INCOME', color: '#607D8B', icon: 'more_horiz' },
+      { name: 'Salário', type: 'INCOME', color: '#4CAF50', icon: 'Work' },
+      { name: 'Freelance', type: 'INCOME', color: '#2196F3', icon: 'Laptop' },
+      { name: 'Investimentos', type: 'INCOME', color: '#FF9800', icon: 'TrendingUp' },
+      { name: 'Vendas', type: 'INCOME', color: '#9C27B0', icon: 'Store' },
+      { name: 'Outros', type: 'INCOME', color: '#607D8B', icon: 'AttachMoney' },
       
-      { name: 'Alimentação', type: 'EXPENSE', color: '#F44336', icon: 'restaurant' },
-      { name: 'Transporte', type: 'EXPENSE', color: '#3F51B5', icon: 'directions_car' },
-      { name: 'Moradia', type: 'EXPENSE', color: '#795548', icon: 'home' },
-      { name: 'Saúde', type: 'EXPENSE', color: '#E91E63', icon: 'local_hospital' },
-      { name: 'Educação', type: 'EXPENSE', color: '#009688', icon: 'school' },
-      { name: 'Lazer', type: 'EXPENSE', color: '#FFEB3B', icon: 'sports_esports' },
-      { name: 'Compras', type: 'EXPENSE', color: '#FF5722', icon: 'shopping_cart' },
-      { name: 'Serviços', type: 'EXPENSE', color: '#673AB7', icon: 'build' }
+      { name: 'Alimentação', type: 'EXPENSE', color: '#F44336', icon: 'Restaurant' },
+      { name: 'Transporte', type: 'EXPENSE', color: '#3F51B5', icon: 'DirectionsCar' },
+      { name: 'Moradia', type: 'EXPENSE', color: '#795548', icon: 'Home' },
+      { name: 'Saúde', type: 'EXPENSE', color: '#E91E63', icon: 'LocalHospital' },
+      { name: 'Educação', type: 'EXPENSE', color: '#009688', icon: 'School' },
+      { name: 'Lazer', type: 'EXPENSE', color: '#FFEB3B', icon: 'SportsEsports' },
+      { name: 'Compras', type: 'EXPENSE', color: '#FF5722', icon: 'ShoppingCart' },
+      { name: 'Serviços', type: 'EXPENSE', color: '#673AB7', icon: 'Build' }
     ];
 
     const createdCategories: Category[] = [];

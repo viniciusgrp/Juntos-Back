@@ -85,6 +85,7 @@ model Transaction {
   accountId     String?
   creditCardId  String?
   categoryId    String
+  goalId        String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -92,6 +93,7 @@ model Transaction {
   account    Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
   creditCard CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
   category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  goal       Goal?       @relation(fields: [goalId], references: [id], onDelete: SetNull)
 
   @@map("transactions")
 }
@@ -125,6 +127,7 @@ model Goal {
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
 
   @@map("goals")
 }

@@ -59,6 +59,23 @@ export class TransactionService {
       }
     }
 
+    if (data.goalId) {
+      const goal = await this.prisma.goal.findFirst({
+        where: {
+          id: data.goalId,
+          userId
+        }
+      });
+
+      if (!goal) {
+        throw new Error('Meta não encontrada ou não pertence ao usuário');
+      }
+
+      if (data.type !== 'INCOME') {
+        throw new Error('Apenas receitas podem ser vinculadas a metas');
+      }
+    }
+
     const transaction = await this.prisma.transaction.create({
       data: {
         description: data.description,
@@ -69,12 +86,14 @@ export class TransactionService {
         userId,
         accountId: data.accountId || null,
         creditCardId: data.creditCardId || null,
-        categoryId: data.categoryId
+        categoryId: data.categoryId,
+        goalId: data.goalId || null
       },
       include: {
         category: true,
         account: true,
-        creditCard: true
+        creditCard: true,
+        goal: true
       }
     });
 
@@ -88,6 +107,11 @@ export class TransactionService {
           }
         }
       });
+    }
+
+    // Atualizar progresso da meta se a transação for de receita, estiver paga e vinculada a uma meta
+    if (data.goalId && data.type === 'INCOME' && data.isPaid) {
+      await this.updateGoalProgress(data.goalId);
     }
 
     return transaction;
@@ -147,7 +171,8 @@ export class TransactionService {
       include: {
         category: true,
         account: true,
-        creditCard: true
+        creditCard: true,
+        goal: true
       },
       orderBy: {
         date: 'desc'
@@ -189,7 +214,8 @@ export class TransactionService {
       include: {
         category: true,
         account: true,
-        creditCard: true
+        creditCard: true,
+        goal: true
       }
     });
 
@@ -243,6 +269,24 @@ export class TransactionService {
       }
     }
 
+    if (data.goalId) {
+      const goal = await this.prisma.goal.findFirst({
+        where: {
+          id: data.goalId,
+          userId
+        }
+      });
+
+      if (!goal) {
+        throw new Error('Meta não encontrada ou não pertence ao usuário');
+      }
+
+      const transactionType = data.type || existingTransaction.type;
+      if (transactionType !== 'INCOME') {
+        throw new Error('Apenas receitas podem ser vinculadas a metas');
+      }
+    }
+
     if (existingTransaction.isPaid && existingTransaction.accountId) {
       const balanceChange = existingTransaction.type === 'INCOME' ? -existingTransaction.amount : existingTransaction.amount;
       await this.prisma.account.update({
@@ -265,6 +309,7 @@ export class TransactionService {
     if (data.accountId !== undefined) updateData.accountId = data.accountId || null;
     if (data.creditCardId !== undefined) updateData.creditCardId = data.creditCardId || null;
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.goalId !== undefined) updateData.goalId = data.goalId || null;
     if (data.installments !== undefined) updateData.installments = data.installments;
 
     const transaction = await this.prisma.transaction.update({
@@ -273,7 +318,8 @@ export class TransactionService {
       include: {
         category: true,
         account: true,
-        creditCard: true
+        creditCard: true,
+        goal: true
       }
     });
 
@@ -294,6 +340,17 @@ export class TransactionService {
       });
     }
 
+    // Atualizar progresso da meta anterior se existia
+    if (existingTransaction.goalId) {
+      await this.updateGoalProgress(existingTransaction.goalId);
+    }
+
+    // Atualizar progresso da nova meta se for de receita e estiver paga
+    const finalGoalId = data.goalId !== undefined ? data.goalId : existingTransaction.goalId;
+    if (finalGoalId && newType === 'INCOME' && newIsPaid) {
+      await this.updateGoalProgress(finalGoalId);
+    }
+
     return transaction;
   }
 
@@ -312,9 +369,17 @@ export class TransactionService {
       });
     }
 
+    // Armazenar o goalId antes de deletar a transação
+    const goalId = transaction.goalId;
+
     await this.prisma.transaction.delete({
       where: { id }
     });
+
+    // Atualizar progresso da meta se a transação estava vinculada a uma
+    if (goalId) {
+      await this.updateGoalProgress(goalId);
+    }
 
     return { message: 'Transação deletada com sucesso' };
   }
@@ -411,5 +476,172 @@ export class TransactionService {
       balance: totalIncomes - totalExpenses,
       topCategories
     };
+  }
+
+  async getDashboardStats(userId: string) {
+    const now = new Date();
+    
+    // Mês atual
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    // Mês anterior
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Buscar todas as transações do usuário
+    const allTransactions = await this.prisma.transaction.findMany({
+      where: { userId },
+      include: {
+        category: true,
+        account: true,
+        creditCard: true
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    // Filtrar transações do mês atual
+    const currentMonthTransactions = allTransactions.filter(t => 
+      t.date >= currentMonthStart && t.date <= currentMonthEnd
+    );
+
+    // Filtrar transações do mês anterior
+    const previousMonthTransactions = allTransactions.filter(t => 
+      t.date >= previousMonthStart && t.date <= previousMonthEnd
+    );
+
+    // Calcular estatísticas do mês atual
+    const currentMonthIncomes = currentMonthTransactions
+      .filter(t => t.type === 'INCOME')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const currentMonthExpenses = currentMonthTransactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Calcular estatísticas do mês anterior
+    const previousMonthIncomes = previousMonthTransactions
+      .filter(t => t.type === 'INCOME')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const previousMonthExpenses = previousMonthTransactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Calcular variações percentuais
+    const incomeChange = previousMonthIncomes > 0 
+      ? ((currentMonthIncomes - previousMonthIncomes) / previousMonthIncomes) * 100 
+      : 0;
+
+    const expenseChange = previousMonthExpenses > 0 
+      ? ((currentMonthExpenses - previousMonthExpenses) / previousMonthExpenses) * 100 
+      : 0;
+
+    // Buscar saldo total das contas
+    const accounts = await this.prisma.account.findMany({
+      where: { userId }
+    });
+
+    const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+
+    // Buscar saldo dos cartões de crédito
+    const creditCards = await this.prisma.creditCard.findMany({
+      where: { userId }
+    });
+
+    // Calcular total gasto nos cartões de crédito no mês atual
+    const creditCardExpenses = currentMonthTransactions
+      .filter(t => t.creditCardId)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const creditCardChange = previousMonthTransactions
+      .filter(t => t.creditCardId)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const creditCardVariation = creditCardChange > 0 
+      ? ((creditCardExpenses - creditCardChange) / creditCardChange) * 100 
+      : 0;
+
+    // Buscar transações recentes (últimas 10)
+    const recentTransactions = allTransactions.slice(0, 10);
+
+    // Calcular distribuição por categoria do mês atual
+    const categoryMap = new Map();
+    currentMonthTransactions
+      .filter(t => t.type === 'EXPENSE')
+      .forEach(transaction => {
+        const categoryName = transaction.category.name;
+        const currentAmount = categoryMap.get(categoryName) || 0;
+        categoryMap.set(categoryName, currentAmount + transaction.amount);
+      });
+
+    const categoryDistribution = Array.from(categoryMap.entries())
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+
+    const totalExpensesForPercentage = currentMonthExpenses;
+    const categoryDistributionWithPercentage = categoryDistribution.map(cat => ({
+      ...cat,
+      percentage: totalExpensesForPercentage > 0 ? (cat.amount / totalExpensesForPercentage) * 100 : 0
+    }));
+
+    return {
+      totalBalance,
+      currentMonthIncomes,
+      currentMonthExpenses,
+      creditCardExpenses,
+      incomeChange: Math.round(incomeChange * 100) / 100,
+      expenseChange: Math.round(expenseChange * 100) / 100,
+      creditCardChange: Math.round(creditCardVariation * 100) / 100,
+      recentTransactions: recentTransactions.map(t => ({
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        date: t.date,
+        category: t.category.name,
+        account: t.account?.name,
+        creditCard: t.creditCard?.name,
+        isPaid: t.isPaid
+      })),
+      categoryDistribution: categoryDistributionWithPercentage,
+      accounts: accounts.map(acc => ({
+        id: acc.id,
+        name: acc.name,
+        type: acc.type,
+        balance: acc.balance
+      })),
+      creditCards: creditCards.map(cc => ({
+        id: cc.id,
+        name: cc.name,
+        limit: cc.limit,
+        currentExpenses: currentMonthTransactions
+          .filter(t => t.creditCardId === cc.id)
+          .reduce((sum, t) => sum + t.amount, 0)
+      }))
+    };
+  }
+
+  private async updateGoalProgress(goalId: string): Promise<void> {
+    // Buscar todas as transações de receita pagas vinculadas a esta meta
+    const goalTransactions = await this.prisma.transaction.findMany({
+      where: {
+        goalId,
+        type: 'INCOME',
+        isPaid: true
+      }
+    });
+
+    // Calcular o total das receitas vinculadas
+    const totalAmount = goalTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+    // Atualizar a meta com o novo progresso
+    await this.prisma.goal.update({
+      where: { id: goalId },
+      data: {
+        currentAmount: totalAmount
+      }
+    });
   }
 }

@@ -13,6 +13,8 @@ router.post('/forgot-password', authController.forgotPassword);
 
 // Rotas protegidas
 router.get('/profile', authMiddleware, authController.profile);
+router.put('/profile', authMiddleware, authController.updateProfile);
+router.patch('/change-password', authMiddleware, authController.changePassword);
 router.get('/validate', authMiddleware, authController.validateToken);
 
 export { router as authRoutes };

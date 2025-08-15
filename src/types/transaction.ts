@@ -7,6 +7,7 @@ export interface CreateTransactionRequest {
   accountId?: string;
   creditCardId?: string;
   categoryId: string;
+  goalId?: string;
   installments?: number;
 }
 
@@ -19,6 +20,7 @@ export interface UpdateTransactionRequest {
   accountId?: string;
   creditCardId?: string;
   categoryId?: string;
+  goalId?: string;
   installments?: number;
 }
 

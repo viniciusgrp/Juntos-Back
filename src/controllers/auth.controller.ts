@@ -43,6 +43,20 @@ export const authController = {
     successResponse(res, result, 'Perfil obtido com sucesso');
   }),
 
+  updateProfile: asyncHandler(async (req: Request, res: Response) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user?.id;
+
+    if (!userId) {
+      return errorResponse(res, 'Usuário não autenticado', 401);
+    }
+
+    const updateData = req.body;
+    const result = await authService.updateProfile(userId, updateData);
+
+    successResponse(res, result, 'Perfil atualizado com sucesso');
+  }),
+
   validateToken: asyncHandler(async (req: Request, res: Response) => {
     const authReq = req as AuthenticatedRequest;
     const userId = authReq.user?.id;
@@ -71,5 +85,36 @@ export const authController = {
     const result = await authService.forgotPassword(email);
 
     successResponse(res, result, 'Nova senha enviada para o e-mail');
+  }),
+
+  changePassword: asyncHandler(async (req: Request, res: Response) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user?.id;
+
+    if (!userId) {
+      return errorResponse(res, 'Usuário não autenticado', 401);
+    }
+
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return errorResponse(res, 'Todos os campos são obrigatórios', 400);
+    }
+
+    if (newPassword !== confirmPassword) {
+      return errorResponse(res, 'Nova senha e confirmação não coincidem', 400);
+    }
+
+    if (newPassword.length < 6) {
+      return errorResponse(res, 'Nova senha deve ter pelo menos 6 caracteres', 400);
+    }
+
+    if (currentPassword === newPassword) {
+      return errorResponse(res, 'A nova senha deve ser diferente da senha atual', 400);
+    }
+
+    const result = await authService.changePassword(userId, currentPassword, newPassword);
+
+    successResponse(res, result, 'Senha alterada com sucesso');
   }),
 };
