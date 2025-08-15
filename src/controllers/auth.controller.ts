@@ -60,4 +60,16 @@ export const authController = {
       }
     }, 'Token válido');
   }),
+
+  forgotPassword: asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return errorResponse(res, 'E-mail é obrigatório', 400);
+    }
+
+    const result = await authService.forgotPassword(email);
+
+    successResponse(res, result, 'Nova senha enviada para o e-mail');
+  }),
 };

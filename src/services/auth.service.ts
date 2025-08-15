@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { LoginRequest, RegisterRequest, AuthResponse, RefreshTokenRequest } from '../types/auth.types';
 import { PasswordUtil } from '../utils/password.util';
 import { JwtUtil } from '../utils/jwt.util';
+import { EmailUtil } from '../utils/email.util';
 import { registerSchema, loginSchema, refreshTokenSchema, validateData } from '../utils/validation.util';
 import prisma from '../config/database.config';
 
@@ -117,5 +118,33 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() }
+    });
+
+    if (!user) {
+      throw new Error('E-mail não encontrado');
+    }
+
+    const newPassword = EmailUtil.generatePassword();
+    const hashedPassword = await PasswordUtil.hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword }
+    });
+
+    await EmailUtil.sendEmail({
+      to: user.email,
+      subject: 'Juntos - Nova Senha Gerada',
+      html: EmailUtil.generateResetPasswordEmail(user.email, newPassword)
+    });
+
+    return {
+      message: 'Nova senha enviada para o seu e-mail'
+    };
   }
 }

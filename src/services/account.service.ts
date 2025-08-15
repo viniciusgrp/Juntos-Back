@@ -86,16 +86,61 @@ export class AccountService {
       }
     }
 
-    const updatedAccount = await prisma.account.update({
-      where: { id: accountId },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.type && { type: data.type }),
-        ...(data.balance !== undefined && { balance: data.balance })
+    // Verificar se o saldo foi alterado e criar transação de ajuste se necessário
+    const shouldCreateAdjustment = data.balance !== undefined && data.balance !== existingAccount.balance;
+    
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedAccount = await tx.account.update({
+        where: { id: accountId },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.type && { type: data.type }),
+          ...(data.balance !== undefined && { balance: data.balance })
+        }
+      });
+
+      // Criar transação de ajuste se o saldo foi alterado
+      if (shouldCreateAdjustment) {
+        const adjustmentAmount = data.balance! - existingAccount.balance;
+        const transactionType = adjustmentAmount > 0 ? 'INCOME' : 'EXPENSE';
+        
+        // Buscar ou criar categoria padrão para ajustes
+        let adjustmentCategory = await tx.category.findFirst({
+          where: {
+            userId,
+            name: 'Ajuste',
+            type: transactionType
+          }
+        });
+
+        if (!adjustmentCategory) {
+          adjustmentCategory = await tx.category.create({
+            data: {
+              name: 'Ajuste',
+              type: transactionType,
+              userId
+            }
+          });
+        }
+
+        await tx.transaction.create({
+          data: {
+            description: 'Ajuste pelo usuário',
+            amount: Math.abs(adjustmentAmount),
+            type: transactionType,
+            date: new Date(),
+            isPaid: true,
+            accountId: accountId,
+            categoryId: adjustmentCategory.id,
+            userId
+          }
+        });
       }
+
+      return updatedAccount;
     });
 
-    return updatedAccount;
+    return result;
   }
 
   async deleteAccount(userId: string, accountId: string) {

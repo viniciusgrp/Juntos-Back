@@ -65,7 +65,7 @@ export class TransactionService {
         amount: data.amount,
         type: data.type,
         date: new Date(data.date),
-        isPaid: data.isPaid || false,
+        isPaid: data.isPaid ?? true,
         userId,
         accountId: data.accountId || null,
         creditCardId: data.creditCardId || null,
@@ -370,6 +370,14 @@ export class TransactionService {
     const incomeCount = transactions.filter(t => t.type === 'INCOME').length;
     const expenseCount = transactions.filter(t => t.type === 'EXPENSE').length;
 
+    const currentMonthIncomeCount = transactions
+      .filter(t => t.type === 'INCOME' && t.date >= startOfMonth && t.date <= endOfMonth)
+      .length;
+
+    const currentMonthExpenseCount = transactions
+      .filter(t => t.type === 'EXPENSE' && t.date >= startOfMonth && t.date <= endOfMonth)
+      .length;
+
     const categoryMap = new Map();
     transactions.forEach(transaction => {
       const categoryId = transaction.categoryId;
@@ -398,6 +406,8 @@ export class TransactionService {
       totalPending,
       currentMonthIncomes,
       currentMonthExpenses,
+      currentMonthIncomeCount,
+      currentMonthExpenseCount,
       balance: totalIncomes - totalExpenses,
       topCategories
     };
